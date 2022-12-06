@@ -3,16 +3,16 @@ package actions
 import (
 	"cheapel/integration"
 	"errors"
+	"fmt"
 	"github.com/samber/lo"
 	"github.com/urfave/cli"
+	"github.com/xconstruct/go-pushbullet"
 	"log"
 	"math"
 	"time"
 )
 
 func CheckPricesAction(c *cli.Context) error {
-	// notifiy := c.IsSet("notify")
-
 	accessToken := c.String("tibber-token")
 	hours := c.Int("hours")
 	// fetch prices
@@ -53,6 +53,19 @@ func CheckPricesAction(c *cli.Context) error {
 			break
 		}
 	}
-	log.Printf("cheapest starts at: %s (avg price: %.2f kr/kWh)", startsAt, cheapest/float64(hours))
+
+	parsed, _ := time.Parse(time.RFC3339, startsAt)
+	msg := fmt.Sprintf("%s (avg price: %.2f kr/kWh)", parsed.Format("2006-01-02 15:04"), cheapest/float64(hours))
+	log.Print(msg)
+
+	if c.Bool("notify") {
+		pb := pushbullet.New(c.String("pb-token"))
+		device, err := pb.Device(c.String("pb-device"))
+		if err != nil {
+			return err
+		}
+		return pb.PushNote(device.Iden, fmt.Sprintf("cheapel %d hour update", hours), msg)
+	}
+
 	return nil
 }

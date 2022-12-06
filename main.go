@@ -33,6 +33,16 @@ func main() {
 					Required: false,
 					Usage:    "send a notification with result via pushbullet",
 				},
+				&cli.StringFlag{
+					Name:     "pb-token",
+					Usage:    "pushbullet access token, required to notify",
+					Required: false,
+				},
+				&cli.StringFlag{
+					Name:     "pb-device",
+					Usage:    "pushbullet device name to notify, required to notify",
+					Required: false,
+				},
 			},
 		},
 	}

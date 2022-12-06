@@ -8,5 +8,6 @@ require (
 	github.com/samber/lo v1.36.0 // indirect
 	github.com/shurcooL/sanitized_anchor_name v1.0.0 // indirect
 	github.com/urfave/cli v1.22.10 // indirect
+	github.com/xconstruct/go-pushbullet v0.0.0-20171206132031-67759df45fbb // indirect
 	golang.org/x/exp v0.0.0-20220303212507-bbda1eaf7a17 // indirect
 )
