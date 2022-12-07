@@ -1,7 +1,7 @@
 package actions
 
 import (
-	"cheapel/integration"
+	"github.com/jesper-nord/cheapel/integration"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"

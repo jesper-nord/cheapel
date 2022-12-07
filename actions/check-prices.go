@@ -1,9 +1,9 @@
 package actions
 
 import (
-	"cheapel/integration"
 	"errors"
 	"fmt"
+	"github.com/jesper-nord/cheapel/integration"
 	"github.com/samber/lo"
 	"github.com/urfave/cli"
 	"github.com/xconstruct/go-pushbullet"

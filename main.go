@@ -1,7 +1,7 @@
 package main
 
 import (
-	"cheapel/actions"
+	"github.com/jesper-nord/cheapel/actions"
 	"github.com/urfave/cli"
 	"log"
 	"os"
