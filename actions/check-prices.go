@@ -13,10 +13,8 @@ import (
 )
 
 func CheckPricesAction(c *cli.Context) error {
-	accessToken := c.String("tibber-token")
 	hours := c.Int("hours")
-	// fetch prices
-	response, err := integration.GetPrices(accessToken)
+	response, err := integration.GetPrices(c.String("tibber-token"))
 	if err != nil {
 		return err
 	}
@@ -29,33 +27,10 @@ func CheckPricesAction(c *cli.Context) error {
 		return errors.New("unable to find home")
 	}
 
-	// merge today's and tomorrow's prices, filter out past prices
-	prices := home.Subscription.PriceInfo.Today
-	prices = append(prices, home.Subscription.PriceInfo.Tomorrow...)
-	prices = lo.Filter(prices, func(item integration.Price, _ int) bool {
-		startsAt, _ := time.Parse(time.RFC3339, item.StartsAt)
-		return startsAt.After(time.Now())
-	})
+	prices := preparePrices(home.Subscription.PriceInfo)
+	cheapest := calculateCheapestPeriod(prices, hours)
 
-	// calculate cheapest cohesive period of given hours
-	cheapest := math.MaxFloat64
-	startsAt := ""
-	for i := range prices {
-		sum := 0.0
-		for j := 0; j < hours; j++ {
-			sum += prices[i+j].Total
-		}
-		if sum < cheapest {
-			cheapest = sum
-			startsAt = prices[i].StartsAt
-		}
-		if i+hours >= len(prices) {
-			break
-		}
-	}
-
-	parsed, _ := time.Parse(time.RFC3339, startsAt)
-	msg := fmt.Sprintf("%s (avg price: %.2f kr/kWh)", parsed.Format("2006-01-02 15:04"), cheapest/float64(hours))
+	msg := fmt.Sprintf("%s (avg price: %.2f kr/kWh)", cheapest.StartTime.Format("2006-01-02 15:04"), cheapest.TotalPrice/float64(hours))
 	log.Print(msg)
 
 	if c.Bool("notify") {
@@ -68,4 +43,42 @@ func CheckPricesAction(c *cli.Context) error {
 	}
 
 	return nil
+}
+
+// merge today's and tomorrow's prices, filter out past prices
+func preparePrices(priceInfo integration.PriceInfo) []integration.Price {
+	prices := priceInfo.Today
+	prices = append(prices, priceInfo.Tomorrow...)
+	prices = lo.Filter(prices, func(item integration.Price, _ int) bool {
+		startsAt, _ := time.Parse(time.RFC3339, item.StartsAt)
+		return startsAt.After(time.Now())
+	})
+	return prices
+}
+
+// calculate cheapest cohesive period of given hours
+func calculateCheapestPeriod(prices []integration.Price, hours int) Period {
+	cheapest := Period{
+		TotalPrice: math.MaxFloat64,
+	}
+	for i := range prices {
+		sum := 0.0
+		for j := 0; j < hours; j++ {
+			sum += prices[i+j].Total
+		}
+		if sum < cheapest.TotalPrice {
+			cheapest.TotalPrice = sum
+			startsAt, _ := time.Parse(time.RFC3339, prices[i].StartsAt)
+			cheapest.StartTime = startsAt
+		}
+		if i+hours >= len(prices) {
+			break
+		}
+	}
+	return cheapest
+}
+
+type Period struct {
+	TotalPrice float64
+	StartTime  time.Time
 }

@@ -30,8 +30,8 @@ func main() {
 				},
 				&cli.BoolFlag{
 					Name:     "notify",
-					Required: false,
 					Usage:    "send a notification with result via pushbullet",
+					Required: false,
 				},
 				&cli.StringFlag{
 					Name:     "pb-token",
