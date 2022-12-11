@@ -44,9 +44,11 @@ func TestCalculateCheapestPeriod(t *testing.T) {
 	}
 
 	expectedStartTime, _ := time.Parse(time.RFC3339, "2022-12-06T02:00:00.000+01:00")
+	expectedEndTime, _ := time.Parse(time.RFC3339, "2022-12-06T06:00:00.000+01:00")
 	expected := Period{
 		TotalPrice: 9.3,
 		StartTime:  expectedStartTime,
+		EndTime:    expectedEndTime,
 	}
 
 	result := calculateCheapestPeriod(prices, 4)

@@ -30,7 +30,7 @@ func CheckPricesAction(c *cli.Context) error {
 	prices := preparePrices(home.Subscription.PriceInfo)
 	cheapest := calculateCheapestPeriod(prices, hours)
 
-	msg := fmt.Sprintf("%s (avg price: %.2f kr/kWh)", cheapest.StartTime.Format("2006-01-02 15:04"), cheapest.TotalPrice/float64(hours))
+	msg := fmt.Sprintf("%s-%s (avg price %.2f kr/kWh)", cheapest.StartTime.Format("15:04"), cheapest.EndTime.Format("15:04"), cheapest.TotalPrice/float64(hours))
 	log.Print(msg)
 
 	if c.Bool("notify") {
@@ -39,7 +39,7 @@ func CheckPricesAction(c *cli.Context) error {
 		if err != nil {
 			return err
 		}
-		return pb.PushNote(device.Iden, fmt.Sprintf("cheapel %d hour update", hours), msg)
+		return pb.PushNote(device.Iden, "cheapel", msg)
 	}
 
 	return nil
@@ -70,6 +70,7 @@ func calculateCheapestPeriod(prices []integration.Price, hours int) Period {
 			cheapest.TotalPrice = sum
 			startsAt, _ := time.Parse(time.RFC3339, prices[i].StartsAt)
 			cheapest.StartTime = startsAt
+			cheapest.EndTime = startsAt.Add(time.Duration(hours) * time.Hour)
 		}
 		if i+hours >= len(prices) {
 			break
@@ -81,4 +82,5 @@ func calculateCheapestPeriod(prices []integration.Price, hours int) Period {
 type Period struct {
 	TotalPrice float64
 	StartTime  time.Time
+	EndTime    time.Time
 }
