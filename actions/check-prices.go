@@ -3,6 +3,7 @@ package actions
 import (
 	"errors"
 	"fmt"
+	"github.com/avast/retry-go"
 	"github.com/jesper-nord/cheapel/integration"
 	"github.com/samber/lo"
 	"github.com/urfave/cli"
@@ -13,36 +14,40 @@ import (
 )
 
 func CheckPricesAction(c *cli.Context) error {
-	hours := c.Int("hours")
-	response, err := integration.GetPrices(c.String("tibber-token"))
-	if err != nil {
-		return err
-	}
-
-	// get current home subscription
-	home, found := lo.Find(response.Data.Viewer.Homes, func(item integration.Home) bool {
-		return item.Subscription != nil
-	})
-	if !found {
-		return errors.New("unable to find home")
-	}
-
-	prices := preparePrices(home.Subscription.PriceInfo)
-	cheapest := calculateCheapestPeriod(prices, hours)
-
-	msg := fmt.Sprintf("%s-%s (avg price %.2f kr/kWh)", cheapest.StartTime.Format("15:04"), cheapest.EndTime.Format("15:04"), cheapest.TotalPrice/float64(hours))
-	log.Print(msg)
-
-	if c.Bool("notify") {
-		pb := pushbullet.New(c.String("pb-token"))
-		device, err := pb.Device(c.String("pb-device"))
+	err := retry.Do(func() error {
+		hours := c.Int("hours")
+		response, err := integration.GetPrices(c.String("tibber-token"))
 		if err != nil {
 			return err
 		}
-		return pb.PushNote(device.Iden, "cheapel", msg)
-	}
 
-	return nil
+		// get current home subscription
+		home, found := lo.Find(response.Data.Viewer.Homes, func(item integration.Home) bool {
+			return item.Subscription != nil
+		})
+		if !found {
+			return errors.New("unable to find home")
+		}
+
+		prices := preparePrices(home.Subscription.PriceInfo)
+		cheapest := calculateCheapestPeriod(prices, hours)
+
+		msg := fmt.Sprintf("%s-%s (avg price %.2f kr/kWh)", cheapest.StartTime.Format("15:04"), cheapest.EndTime.Format("15:04"), cheapest.TotalPrice/float64(hours))
+		log.Print(msg)
+
+		if c.Bool("notify") {
+			pb := pushbullet.New(c.String("pb-token"))
+			device, err := pb.Device(c.String("pb-device"))
+			if err != nil {
+				return err
+			}
+			return pb.PushNote(device.Iden, "cheapel", msg)
+		}
+
+		return nil
+	}, retry.Attempts(3), retry.Delay(time.Second*30), retry.DelayType(retry.FixedDelay))
+
+	return err
 }
 
 // merge today's and tomorrow's prices, filter out past prices
