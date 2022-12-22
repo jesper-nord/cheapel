@@ -14,7 +14,7 @@ import (
 )
 
 func CheckPricesAction(c *cli.Context) error {
-	err := retry.Do(func() error {
+	checkPricesRetryable := func() error {
 		hours := c.Int("hours")
 		response, err := integration.GetPrices(c.String("tibber-token"))
 		if err != nil {
@@ -45,9 +45,9 @@ func CheckPricesAction(c *cli.Context) error {
 		}
 
 		return nil
-	}, retry.Attempts(3), retry.Delay(time.Second*30), retry.DelayType(retry.FixedDelay))
+	}
 
-	return err
+	return retry.Do(checkPricesRetryable, retry.Attempts(5), retry.Delay(time.Second*10), retry.DelayType(retry.FixedDelay))
 }
 
 // merge today's and tomorrow's prices, filter out past prices

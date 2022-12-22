@@ -15,7 +15,7 @@ const pricesQuery = `{ "query": "{viewer {homes {currentSubscription {priceInfo 
 
 var (
 	client = &http.Client{
-		Timeout: 30 * time.Second,
+		Timeout: 5 * time.Second,
 	}
 )
 
