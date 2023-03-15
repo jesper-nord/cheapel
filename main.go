@@ -1,53 +1,45 @@
 package main
 
 import (
-	"github.com/jesper-nord/cheapel/actions"
-	"github.com/urfave/cli"
+	"flag"
+	"fmt"
+	"github.com/jesper-nord/cheapel/service"
+	"github.com/spf13/viper"
 	"log"
 	"os"
 )
 
+var (
+	hoursFlag  = flag.Int("hours", 1, "length of period to check for (hours)")
+	notifyFlag = flag.Bool("notify", false, "send a notification with result via pushbullet")
+	configFlag = flag.String("config", "./cheapel-config.yaml", "config file location")
+	helpFlag   = flag.Bool("help", false, "show available commands")
+)
+
 func main() {
-	app := cli.NewApp()
-	app.Name = "cheapel"
-	app.Usage = "find the cheapest cohesive period of given hours with regards to electricity costs"
-	app.Commands = []cli.Command{
-		{
-			Name:     "find",
-			HelpName: "find",
-			Action:   actions.CheckPricesAction,
-			Flags: []cli.Flag{
-				&cli.IntFlag{
-					Name:     "hours",
-					Usage:    "period of hours to check for",
-					Required: true,
-					Value:    4,
-				},
-				&cli.StringFlag{
-					Name:     "tibber-token",
-					Usage:    "tibber access token",
-					Required: true,
-				},
-				&cli.BoolFlag{
-					Name:     "notify",
-					Usage:    "send a notification with result via pushbullet",
-					Required: false,
-				},
-				&cli.StringFlag{
-					Name:     "pb-token",
-					Usage:    "pushbullet access token, required to notify",
-					Required: false,
-				},
-				&cli.StringFlag{
-					Name:     "pb-device",
-					Usage:    "pushbullet device name to notify, required to notify",
-					Required: false,
-				},
-			},
-		},
+	flag.Parse()
+
+	if *helpFlag {
+		flag.PrintDefaults()
+		os.Exit(1)
 	}
-	err := app.Run(os.Args)
+
+	readConfig()
+	tibberToken := viper.GetString("tibber-token")
+	pbToken := viper.GetString("pb-token")
+	pbDevice := viper.GetString("pb-device")
+
+	err := service.CheckPrices(*hoursFlag, tibberToken, pbToken, pbDevice, *notifyFlag)
 	if err != nil {
 		log.Fatal(err)
+	}
+}
+
+func readConfig() {
+	viper.SetConfigFile(*configFlag)
+	viper.SetConfigType("yaml")
+	err := viper.ReadInConfig()
+	if err != nil {
+		panic(fmt.Errorf("fatal error config file: %s", err))
 	}
 }

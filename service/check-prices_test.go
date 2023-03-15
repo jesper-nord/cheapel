@@ -1,4 +1,4 @@
-package actions
+package service
 
 import (
 	"github.com/jesper-nord/cheapel/integration"

@@ -1,4 +1,4 @@
-package actions
+package service
 
 import (
 	"errors"
@@ -6,17 +6,15 @@ import (
 	"github.com/avast/retry-go"
 	"github.com/jesper-nord/cheapel/integration"
 	"github.com/samber/lo"
-	"github.com/urfave/cli"
 	"github.com/xconstruct/go-pushbullet"
 	"log"
 	"math"
 	"time"
 )
 
-func CheckPricesAction(c *cli.Context) error {
+func CheckPrices(hours int, tibberToken, pbToken, pbDevice string, notify bool) error {
 	checkPricesRetryable := func() error {
-		hours := c.Int("hours")
-		response, err := integration.GetPrices(c.String("tibber-token"))
+		response, err := integration.GetPrices(tibberToken)
 		if err != nil {
 			return err
 		}
@@ -35,9 +33,9 @@ func CheckPricesAction(c *cli.Context) error {
 		msg := fmt.Sprintf("%s-%s (avg price %.2f kr/kWh)", cheapest.StartTime.Format("15:04"), cheapest.EndTime.Format("15:04"), cheapest.TotalPrice/float64(hours))
 		log.Print(msg)
 
-		if c.Bool("notify") {
-			pb := pushbullet.New(c.String("pb-token"))
-			device, err := pb.Device(c.String("pb-device"))
+		if notify && pbToken != "" && pbDevice != "" {
+			pb := pushbullet.New(pbToken)
+			device, err := pb.Device(pbDevice)
 			if err != nil {
 				return err
 			}
