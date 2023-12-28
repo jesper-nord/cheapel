@@ -76,7 +76,7 @@ func doPost(accessToken string) (*http.Response, error) {
 		return nil, err
 	}
 	request.Header = map[string][]string{
-		"User-Agent":    {"price checker by jesper@nord.pm"},
+		"User-Agent":    {"cheapel by jesper@nord.pm"},
 		"Authorization": {fmt.Sprintf("Bearer %s", accessToken)},
 		"Content-Type":  {"application/json"},
 	}
