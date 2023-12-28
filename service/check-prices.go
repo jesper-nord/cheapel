@@ -4,17 +4,16 @@ import (
 	"errors"
 	"fmt"
 	"github.com/avast/retry-go"
-	"github.com/jesper-nord/cheapel/integration"
+	"github.com/jesper-nord/cheapel/v2/integration"
 	"github.com/samber/lo"
-	"github.com/xconstruct/go-pushbullet"
 	"log"
 	"math"
 	"time"
 )
 
-func CheckPrices(hours int, tibberToken, pbToken, pbDevice string, notify bool) error {
+func CheckPrices(hours int, token string, notify bool) error {
 	checkPricesRetryable := func() error {
-		response, err := integration.GetPrices(tibberToken)
+		response, err := integration.GetPrices(token)
 		if err != nil {
 			return err
 		}
@@ -33,13 +32,11 @@ func CheckPrices(hours int, tibberToken, pbToken, pbDevice string, notify bool) 
 		msg := fmt.Sprintf("%s-%s (avg price %.2f kr/kWh)", cheapest.StartTime.Format("15:04"), cheapest.EndTime.Format("15:04"), cheapest.TotalPrice/float64(hours))
 		log.Print(msg)
 
-		if notify && pbToken != "" && pbDevice != "" {
-			pb := pushbullet.New(pbToken)
-			device, err := pb.Device(pbDevice)
+		if notify {
+			_, err = integration.SendNotification(token, "cheapel", msg)
 			if err != nil {
 				return err
 			}
-			return pb.PushNote(device.Iden, "cheapel", msg)
 		}
 
 		return nil

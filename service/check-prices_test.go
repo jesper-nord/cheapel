@@ -1,7 +1,7 @@
 package service
 
 import (
-	"github.com/jesper-nord/cheapel/integration"
+	"github.com/jesper-nord/cheapel/v2/integration"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
