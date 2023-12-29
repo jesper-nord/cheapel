@@ -1,6 +1,6 @@
 module github.com/jesper-nord/cheapel/v2
 
-go 1.19
+go 1.21
 
 require (
 	github.com/avast/retry-go v3.0.0+incompatible
